@@ -1,0 +1,17 @@
+Month,Region,Product,Units Sold,Revenue
+January,North,Widget A,120,3600
+January,South,Widget A,95,2850
+January,North,Widget B,60,3000
+January,South,Widget B,80,4000
+February,North,Widget A,140,4200
+February,South,Widget A,110,3300
+February,North,Widget B,75,3750
+February,South,Widget B,90,4500
+March,North,Widget A,160,4800
+March,South,Widget A,130,3900
+March,North,Widget B,85,4250
+March,South,Widget B,100,5000
+April,North,Widget A,150,4500
+April,South,Widget A,120,3600
+April,North,Widget B,90,4500
+April,South,Widget B,95,4750
