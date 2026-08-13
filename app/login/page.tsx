@@ -5,13 +5,58 @@ import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { login, signup } from "@/app/auth/actions";
+import { checkPassword } from "@/lib/password";
+import PasswordChecklist from "@/components/PasswordChecklist";
+import Spinner from "@/components/Spinner";
 
 function LoginForm() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [showPassword, setShowPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const searchParams = useSearchParams();
-  const error = searchParams.get("error");
+  const urlError = searchParams.get("error");
   const message = searchParams.get("message");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setFormError(null);
+    const formData = new FormData(e.currentTarget);
+    const email = (formData.get("email") as string).trim();
+
+    if (mode === "signup") {
+      const pwCheck = checkPassword(password);
+      if (!pwCheck.valid) {
+        setFormError("Please meet all password requirements below.");
+        return;
+      }
+
+      setCheckingEmail(true);
+      try {
+        const res = await fetch(`/api/verify-email?email=${encodeURIComponent(email)}`);
+        const json = await res.json();
+        if (!json.valid) {
+          setCheckingEmail(false);
+          setFormError("That email address doesn't look real. Please double check it.");
+          return;
+        }
+      } catch {
+        // If the check itself fails, don't block signup over an infra hiccup.
+      }
+      setCheckingEmail(false);
+    }
+
+    setSubmitting(true);
+    if (mode === "signin") {
+      await login(formData);
+    } else {
+      await signup(formData);
+    }
+  }
+
+  const busy = submitting || checkingEmail;
 
   return (
     <div className="w-full max-w-sm">
@@ -33,7 +78,10 @@ function LoginForm() {
       <div className="flex mb-6 border border-border rounded-lg overflow-hidden">
         <button
           type="button"
-          onClick={() => setMode("signin")}
+          onClick={() => {
+            setMode("signin");
+            setFormError(null);
+          }}
           className={`flex-1 py-2 text-sm font-medium transition-colors ${
             mode === "signin"
               ? "bg-accent-indigo text-background"
@@ -44,7 +92,10 @@ function LoginForm() {
         </button>
         <button
           type="button"
-          onClick={() => setMode("signup")}
+          onClick={() => {
+            setMode("signup");
+            setFormError(null);
+          }}
           className={`flex-1 py-2 text-sm font-medium transition-colors ${
             mode === "signup"
               ? "bg-accent-indigo text-background"
@@ -55,10 +106,7 @@ function LoginForm() {
         </button>
       </div>
 
-      <form
-        action={mode === "signin" ? login : signup}
-        className="flex flex-col gap-3"
-      >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div>
           <label htmlFor="email" className="text-xs font-mono text-muted block mb-1">
             Email
@@ -73,16 +121,27 @@ function LoginForm() {
           />
         </div>
         <div>
-          <label htmlFor="password" className="text-xs font-mono text-muted block mb-1">
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="password" className="text-xs font-mono text-muted">
+              Password
+            </label>
+            {mode === "signin" && (
+              <Link
+                href="/reset-password"
+                className="text-xs font-mono text-accent-indigo hover:text-accent-aqua transition-colors"
+              >
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <div className="relative">
             <input
               id="password"
               name="password"
               type={showPassword ? "text" : "password"}
               required
-              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-border bg-surface px-3 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-accent-indigo"
               placeholder="••••••••"
             />
@@ -100,20 +159,21 @@ function LoginForm() {
               )}
             </button>
           </div>
+          {mode === "signup" && <PasswordChecklist password={password} />}
         </div>
 
-        {error && (
-          <p className="text-xs font-mono text-accent-amber">{error}</p>
+        {(formError || urlError) && (
+          <p className="text-xs font-mono text-accent-amber">{formError || urlError}</p>
         )}
-        {message && (
-          <p className="text-xs font-mono text-accent-aqua">{message}</p>
-        )}
+        {message && <p className="text-xs font-mono text-accent-aqua">{message}</p>}
 
         <button
           type="submit"
-          className="mt-2 w-full rounded-lg bg-accent-indigo text-background py-2.5 text-sm font-medium hover:bg-accent-aqua transition-colors"
+          disabled={busy}
+          className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-accent-indigo text-background py-2.5 text-sm font-medium hover:bg-accent-aqua transition-colors disabled:opacity-60"
         >
-          {mode === "signin" ? "Sign in" : "Sign up"}
+          {busy && <Spinner className="w-4 h-4 text-background" />}
+          {checkingEmail ? "Checking email…" : mode === "signin" ? "Sign in" : "Sign up"}
         </button>
       </form>
     </div>

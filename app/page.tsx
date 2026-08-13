@@ -9,6 +9,7 @@ import DataPreview from "@/components/DataPreview";
 import QueryLedger from "@/components/QueryLedger";
 import AuthStatus from "@/components/AuthStatus";
 import Sidebar from "@/components/Sidebar";
+import Spinner from "@/components/Spinner";
 import { createClient } from "@/lib/supabase/client";
 import {
   createChat,
@@ -40,6 +41,8 @@ export default function Home() {
   const [authNotice, setAuthNotice] = useState(false);
 
   const [chats, setChats] = useState<ChatSummary[]>([]);
+  const [chatsLoading, setChatsLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [pendingNewFile, setPendingNewFile] = useState<ParsedCsv | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,8 +51,10 @@ export default function Home() {
   const hasLoadedChats = useRef(false);
 
   const refreshChats = useCallback(async (userId: string) => {
+    setChatsLoading(true);
     const list = await loadChats(userId);
     setChats(list);
+    setChatsLoading(false);
   }, []);
 
   async function runAsk(
@@ -219,7 +224,9 @@ export default function Home() {
 
   async function handleSelectChat(chatId: string) {
     setSidebarOpen(false);
+    setChatLoading(true);
     const result = await loadChatWithEntries(chatId);
+    setChatLoading(false);
     if (!result) return;
     setData(result.parsedCsv);
     setEntries(result.entries);
@@ -266,6 +273,7 @@ export default function Home() {
           onNewChat={handleNewChat}
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
+          loading={chatsLoading}
         />
       )}
 
@@ -322,56 +330,68 @@ export default function Home() {
             </section>
           )}
 
-          {data && (
-            <section className="mb-6">
-              <DataPreview data={data} />
-            </section>
+          {chatLoading ? (
+            <div className="mb-6 flex justify-center py-10">
+              <Spinner className="w-6 h-6 text-accent-indigo" />
+            </div>
+          ) : (
+            <>
+              {data && (
+                <section className="mb-6">
+                  <DataPreview data={data} />
+                </section>
+              )}
+
+              <section className="mb-6">
+                <form onSubmit={handleAsk} className="relative">
+                  <div className="flex gap-2 p-[1.5px] rounded-lg bg-gradient-to-r from-accent-indigo/60 via-accent-aqua/60 to-accent-indigo/60 focus-within:from-accent-indigo focus-within:via-accent-aqua focus-within:to-accent-indigo transition-colors">
+                    <div className="flex flex-1 gap-2 rounded-[7px] bg-surface p-1">
+                      <input
+                        type="text"
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                        disabled={!data || submitting}
+                        placeholder={
+                          data
+                            ? "e.g. What were total sales by region?"
+                            : "Upload a CSV first"
+                        }
+                        className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted disabled:opacity-50 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!data || !question.trim() || submitting}
+                        className="px-3 rounded-md bg-accent-indigo text-background disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent-aqua transition-colors"
+                        aria-label="Ask"
+                      >
+                        {submitting ? (
+                          <Spinner className="w-4 h-4 text-background" />
+                        ) : (
+                          <ArrowUp className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+
+                {authNotice && (
+                  <div className="mt-3 border border-accent-indigo/40 bg-accent-indigo/5 rounded-lg px-4 py-3 text-sm text-foreground flex items-center justify-between gap-3 flex-wrap">
+                    <span>Please login to your account or signup to create one.</span>
+                    <Link
+                      href="/login"
+                      className="font-mono text-xs text-accent-indigo hover:text-accent-aqua transition-colors whitespace-nowrap"
+                    >
+                      Sign in / Sign up →
+                    </Link>
+                  </div>
+                )}
+              </section>
+
+              <section>
+                <QueryLedger entries={entries} />
+              </section>
+            </>
           )}
-
-          <section className="mb-6">
-            <form onSubmit={handleAsk} className="relative">
-              <div className="flex gap-2 p-[1.5px] rounded-lg bg-gradient-to-r from-accent-indigo/60 via-accent-aqua/60 to-accent-indigo/60 focus-within:from-accent-indigo focus-within:via-accent-aqua focus-within:to-accent-indigo transition-colors">
-                <div className="flex flex-1 gap-2 rounded-[7px] bg-surface p-1">
-                  <input
-                    type="text"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    disabled={!data || submitting}
-                    placeholder={
-                      data
-                        ? "e.g. What were total sales by region?"
-                        : "Upload a CSV first"
-                    }
-                    className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted disabled:opacity-50 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!data || !question.trim() || submitting}
-                    className="px-3 rounded-md bg-accent-indigo text-background disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent-aqua transition-colors"
-                    aria-label="Ask"
-                  >
-                    <ArrowUp className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {authNotice && (
-              <div className="mt-3 border border-accent-indigo/40 bg-accent-indigo/5 rounded-lg px-4 py-3 text-sm text-foreground flex items-center justify-between gap-3 flex-wrap">
-                <span>Please login to your account or signup to create one.</span>
-                <Link
-                  href="/login"
-                  className="font-mono text-xs text-accent-indigo hover:text-accent-aqua transition-colors whitespace-nowrap"
-                >
-                  Sign in / Sign up →
-                </Link>
-              </div>
-            )}
-          </section>
-
-          <section>
-            <QueryLedger entries={entries} />
-          </section>
         </div>
       </div>
     </div>

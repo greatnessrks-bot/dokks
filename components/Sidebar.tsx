@@ -2,6 +2,7 @@
 
 import { FileText, Plus } from "lucide-react";
 import type { ChatSummary } from "@/lib/chats";
+import Spinner from "@/components/Spinner";
 
 interface Props {
   chats: ChatSummary[];
@@ -10,6 +11,7 @@ interface Props {
   onNewChat: () => void;
   open: boolean;
   onClose: () => void;
+  loading: boolean;
 }
 
 export default function Sidebar({
@@ -19,6 +21,7 @@ export default function Sidebar({
   onNewChat,
   open,
   onClose,
+  loading,
 }: Props) {
   return (
     <>
@@ -46,7 +49,11 @@ export default function Sidebar({
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
-            {chats.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center py-6">
+                <Spinner />
+              </div>
+            ) : chats.length === 0 ? (
               <p className="text-xs font-mono text-muted px-2 py-4 text-center">
                 No chats yet
               </p>

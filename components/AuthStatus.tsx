@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { logout } from "@/app/auth/actions";
+import Spinner from "@/components/Spinner";
 
 export default function AuthStatus() {
   const [user, setUser] = useState<User | null>(null);
@@ -27,7 +28,9 @@ export default function AuthStatus() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (loading) return <div className="h-4" />;
+  if (loading) {
+    return <Spinner className="w-4 h-4 text-muted" />;
+  }
 
   if (!user) {
     return (
