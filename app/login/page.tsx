@@ -49,10 +49,20 @@ function LoginForm() {
     }
 
     setSubmitting(true);
-    if (mode === "signin") {
-      await login(formData);
-    } else {
-      await signup(formData);
+    try {
+      if (mode === "signin") {
+        const result = await login(formData);
+        if (result?.error) {
+          setFormError(result.error);
+        }
+      } else {
+        const result = await signup(formData);
+        if (result?.error) {
+          setFormError(result.error);
+        }
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
