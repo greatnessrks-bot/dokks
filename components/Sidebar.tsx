@@ -1,8 +1,10 @@
 "use client";
 
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, Settings } from "lucide-react";
+import Link from "next/link";
 import type { ChatSummary } from "@/lib/chats";
 import Spinner from "@/components/Spinner";
+import { useSettings } from "@/contexts/SettingsContext";
 
 interface Props {
   chats: ChatSummary[];
@@ -23,6 +25,8 @@ export default function Sidebar({
   onClose,
   loading,
 }: Props) {
+  const { t } = useSettings();
+
   return (
     <>
       {open && (
@@ -45,7 +49,7 @@ export default function Sidebar({
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent-indigo text-background px-3 py-2 text-sm font-medium hover:bg-accent-aqua transition-colors"
             >
               <Plus className="w-4 h-4" />
-              New chat
+              {t("newChat")}
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
@@ -55,7 +59,7 @@ export default function Sidebar({
               </div>
             ) : chats.length === 0 ? (
               <p className="text-xs font-mono text-muted px-2 py-4 text-center">
-                No chats yet
+                {t("noChatsYet")}
               </p>
             ) : (
               <div className="flex flex-col gap-1">
@@ -77,6 +81,15 @@ export default function Sidebar({
                 ))}
               </div>
             )}
+          </div>
+          <div className="p-3 border-t border-border">
+            <Link
+              href="/settings"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted hover:bg-background/60 hover:text-foreground transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+              {t("settings")}
+            </Link>
           </div>
         </div>
       </aside>

@@ -12,6 +12,30 @@
   --accent-amber: #FFB454;
 }
 
+.dark {
+  --background: #0A0D12;
+  --surface: #12161D;
+  --foreground: #E8EAF0;
+  --muted: #8A93A3;
+  --border: #232935;
+
+  --accent-indigo: #7C6FFF;
+  --accent-aqua: #35E6C8;
+  --accent-amber: #FFB454;
+}
+
+.light {
+  --background: #F7F8FA;
+  --surface: #FFFFFF;
+  --foreground: #14171F;
+  --muted: #6B7280;
+  --border: #E4E7EC;
+
+  --accent-indigo: #6355E8;
+  --accent-aqua: #0FAF95;
+  --accent-amber: #D9860F;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -31,4 +55,5 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }

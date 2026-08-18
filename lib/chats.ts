@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { parseCsvText } from "@/lib/csv";
-import type { ChartSpec, LedgerEntry, ParsedCsv } from "@/lib/types";
+import type { ChartSpec, DocumentKind, LedgerEntry, ParsedCsv } from "@/lib/types";
 
 export interface ChatSummary {
   id: string;
@@ -32,13 +32,14 @@ export async function loadChats(userId: string): Promise<ChatSummary[]> {
 export async function createChat(
   userId: string,
   fileName: string,
-  csvText: string
+  csvText: string,
+  kind: DocumentKind
 ): Promise<string | null> {
   const supabase = createClient();
 
   const { data, error } = await supabase
     .from("chats")
-    .insert({ user_id: userId, file_name: fileName, csv_text: csvText })
+    .insert({ user_id: userId, file_name: fileName, csv_text: csvText, kind })
     .select("id")
     .single();
 
@@ -57,7 +58,7 @@ export async function loadChatWithEntries(
 
   const { data: chatRow, error: chatError } = await supabase
     .from("chats")
-    .select("file_name, csv_text")
+    .select("file_name, csv_text, kind")
     .eq("id", chatId)
     .single();
 
@@ -66,7 +67,22 @@ export async function loadChatWithEntries(
     return null;
   }
 
-  const parsedCsv = parseCsvText(chatRow.file_name, chatRow.csv_text);
+  // Older rows saved before the kind column existed default to "tabular"
+  // via the DB column default, so this always resolves to a valid kind.
+  const kind = (chatRow.kind as DocumentKind) ?? "tabular";
+
+  let parsedCsv: ParsedCsv | null;
+  if (kind === "text") {
+    parsedCsv = {
+      fileName: chatRow.file_name,
+      kind: "text",
+      columns: [],
+      rows: [],
+      rawText: chatRow.csv_text,
+    };
+  } else {
+    parsedCsv = parseCsvText(chatRow.file_name, chatRow.csv_text);
+  }
   if (!parsedCsv) return null;
 
   const { data: entryRows, error: entriesError } = await supabase

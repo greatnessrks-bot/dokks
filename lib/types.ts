@@ -1,3 +1,5 @@
+export type DocumentKind = "tabular" | "text";
+
 export interface ChartSpec {
   type: "bar" | "line";
   title: string;
@@ -16,6 +18,7 @@ export interface LedgerEntry {
 
 export interface ParsedCsv {
   fileName: string;
+  kind: DocumentKind;
   columns: string[];
   rows: Record<string, string>[];
   rawText: string;

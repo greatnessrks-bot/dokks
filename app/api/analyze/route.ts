@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 
-const MAX_CSV_CHARS = 20000;
+const MAX_CONTENT_CHARS = 20000;
 
 interface ChartSpec {
   type: "bar" | "line";
@@ -78,21 +78,24 @@ async function alertAuthError(message: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { csvText, columns, question } = await req.json();
+    const { content, columns, kind, question } = await req.json();
 
-    if (!csvText || !question) {
+    if (!content || !question) {
       return NextResponse.json(
-        { error: "csvText and question are required" },
+        { error: "content and question are required" },
         { status: 400 }
       );
     }
 
-    const truncatedCsv =
-      csvText.length > MAX_CSV_CHARS
-        ? csvText.slice(0, MAX_CSV_CHARS) + "\n...[truncated for length]"
-        : csvText;
+    const truncatedContent =
+      content.length > MAX_CONTENT_CHARS
+        ? content.slice(0, MAX_CONTENT_CHARS) + "\n...[truncated for length]"
+        : content;
 
-    const systemPrompt = `You are a data analyst. You are given a CSV dataset and a question about it in plain English.
+    const isTabular = kind === "tabular" && Array.isArray(columns) && columns.length > 0;
+
+    const systemPrompt = isTabular
+      ? `You are a data analyst. You are given a CSV dataset and a question about it in plain English.
 
 Columns available: ${columns.join(", ")}
 
@@ -108,7 +111,16 @@ Respond ONLY with a single valid JSON object, no markdown fences, no preamble. S
   } | null
 }
 
-Only include a "chart" object if a chart would meaningfully help answer the question (e.g. trends, comparisons, totals by category). Otherwise set "chart" to null. Keep chart data to at most 20 points, aggregating if necessary.`;
+Only include a "chart" object if a chart would meaningfully help answer the question (e.g. trends, comparisons, totals by category). Otherwise set "chart" to null. Keep chart data to at most 20 points, aggregating if necessary.`
+      : `You are a document analyst. You are given the extracted text of a document (Word, PowerPoint, or PDF) and a question about it in plain English.
+
+Respond ONLY with a single valid JSON object, no markdown fences, no preamble. Shape:
+{
+  "answer": "<a clear, concise plain-English answer to the question, referencing specific details from the document>",
+  "chart": null
+}
+
+Charts are rarely appropriate for a text document — only include a non-null "chart" object if the document text itself contains a small set of clearly comparable numeric values worth visualizing (at most 20 points, type "bar" or "line"). Otherwise always set "chart" to null.`;
 
     const model = genAI.getGenerativeModel({
       model: "gemini-3.6-flash",
@@ -119,7 +131,7 @@ Only include a "chart" object if a chart would meaningfully help answer the ques
     });
 
     const result = await model.generateContent(
-      `CSV data:\n${truncatedCsv}\n\nQuestion: ${question}`
+      `${isTabular ? "CSV data" : "Document text"}:\n${truncatedContent}\n\nQuestion: ${question}`
     );
 
     const rawText = result.response.text();

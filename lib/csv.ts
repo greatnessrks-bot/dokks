@@ -25,5 +25,5 @@ export function parseCsvText(fileName: string, rawText: string): ParsedCsv | nul
   });
   const columns = results.meta.fields;
   if (!columns) return null;
-  return { fileName, columns, rows: results.data, rawText };
+  return { fileName, kind: "tabular", columns, rows: results.data, rawText };
 }

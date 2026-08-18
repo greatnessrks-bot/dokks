@@ -11,6 +11,7 @@ import AuthStatus from "@/components/AuthStatus";
 import Sidebar from "@/components/Sidebar";
 import Spinner from "@/components/Spinner";
 import { createClient } from "@/lib/supabase/client";
+import { useSettings } from "@/contexts/SettingsContext";
 import {
   createChat,
   loadChats,
@@ -32,6 +33,7 @@ interface PendingAsk {
 }
 
 export default function Home() {
+  const { t } = useSettings();
   const [data, setData] = useState<ParsedCsv | null>(null);
   const [question, setQuestion] = useState("");
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
@@ -75,8 +77,9 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          csvText: askData.rawText,
+          content: askData.rawText,
           columns: askData.columns,
+          kind: askData.kind,
           question: askQuestion,
         }),
       });
@@ -176,7 +179,8 @@ export default function Home() {
         const newChatId = await createChat(
           user.id,
           pending.data.fileName,
-          pending.data.rawText
+          pending.data.rawText,
+          pending.data.kind
         );
         setSelectedChatId(newChatId);
         refreshChats(user.id);
@@ -206,7 +210,7 @@ export default function Home() {
     setSidebarOpen(false);
 
     if (user) {
-      const newChatId = await createChat(user.id, parsed.fileName, parsed.rawText);
+      const newChatId = await createChat(user.id, parsed.fileName, parsed.rawText, parsed.kind);
       setSelectedChatId(newChatId);
       refreshChats(user.id);
     }
@@ -253,7 +257,7 @@ export default function Home() {
 
     let chatId = selectedChatId;
     if (!chatId) {
-      chatId = await createChat(user.id, data.fileName, data.rawText);
+      chatId = await createChat(user.id, data.fileName, data.rawText, data.kind);
       setSelectedChatId(chatId);
       refreshChats(user.id);
     }
@@ -304,11 +308,10 @@ export default function Home() {
               AI Data Analyst
             </p>
             <h1 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">
-              Ask your spreadsheet a question.
+              {t("heroTitle")}
             </h1>
             <p className="mt-2 text-sm text-muted max-w-md">
-              Upload a CSV, then ask in plain English. Each document gets its
-              own chat, saved to your account.
+              {t("heroSubtitle")}
             </p>
           </header>
 
@@ -319,13 +322,13 @@ export default function Home() {
           {pendingNewFile && (
             <section className="mb-6 border border-accent-amber/40 bg-accent-amber/5 rounded-lg px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
               <span className="text-sm text-foreground">
-                Kindly open a new chat for this doc.
+                {t("openNewChatPrompt")}
               </span>
               <button
                 onClick={() => acceptNewFile(pendingNewFile)}
                 className="font-mono text-xs rounded-md bg-accent-indigo text-background px-3 py-1.5 hover:bg-accent-aqua transition-colors whitespace-nowrap"
               >
-                Open new chat →
+                {t("openNewChat")}
               </button>
             </section>
           )}
@@ -352,9 +355,7 @@ export default function Home() {
                         onChange={(e) => setQuestion(e.target.value)}
                         disabled={!data || submitting}
                         placeholder={
-                          data
-                            ? "e.g. What were total sales by region?"
-                            : "Upload a CSV first"
+                          data ? t("askPlaceholder") : t("uploadFileFirst")
                         }
                         className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted disabled:opacity-50 focus:outline-none"
                       />
@@ -376,12 +377,12 @@ export default function Home() {
 
                 {authNotice && (
                   <div className="mt-3 border border-accent-indigo/40 bg-accent-indigo/5 rounded-lg px-4 py-3 text-sm text-foreground flex items-center justify-between gap-3 flex-wrap">
-                    <span>Please login to your account or signup to create one.</span>
+                    <span>{t("pleaseLogin")}</span>
                     <Link
                       href="/login"
                       className="font-mono text-xs text-accent-indigo hover:text-accent-aqua transition-colors whitespace-nowrap"
                     >
-                      Sign in / Sign up →
+                      {t("signInSignUp")}
                     </Link>
                   </div>
                 )}
