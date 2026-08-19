@@ -8,8 +8,10 @@ import { login, signup } from "@/app/auth/actions";
 import { checkPassword } from "@/lib/password";
 import PasswordChecklist from "@/components/PasswordChecklist";
 import Spinner from "@/components/Spinner";
+import { useSettings } from "@/contexts/SettingsContext";
 
 function LoginForm() {
+  const { t } = useSettings();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
@@ -29,7 +31,7 @@ function LoginForm() {
     if (mode === "signup") {
       const pwCheck = checkPassword(password);
       if (!pwCheck.valid) {
-        setFormError("Please meet all password requirements below.");
+        setFormError(t("passwordRequirementsError"));
         return;
       }
 
@@ -39,7 +41,7 @@ function LoginForm() {
         const json = await res.json();
         if (!json.valid) {
           setCheckingEmail(false);
-          setFormError("That email address doesn't look real. Please double check it.");
+          setFormError(t("invalidEmailError"));
           return;
         }
       } catch {
@@ -75,14 +77,14 @@ function LoginForm() {
         className="inline-flex items-center gap-1.5 text-xs font-mono text-muted hover:text-accent-aqua transition-colors mb-6"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        Back
+        {t("back")}
       </Link>
 
       <p className="font-mono text-xs tracking-widest text-accent-aqua uppercase mb-2 text-center">
         AI Data Analyst
       </p>
       <h1 className="font-display text-2xl font-semibold text-foreground tracking-tight text-center mb-8">
-        {mode === "signin" ? "Welcome back" : "Create your account"}
+        {mode === "signin" ? t("welcomeBack") : t("createAccount")}
       </h1>
 
       <div className="flex mb-6 border border-border rounded-lg overflow-hidden">
@@ -98,7 +100,7 @@ function LoginForm() {
               : "bg-surface text-muted hover:text-foreground"
           }`}
         >
-          Sign in
+          {t("signIn")}
         </button>
         <button
           type="button"
@@ -112,14 +114,14 @@ function LoginForm() {
               : "bg-surface text-muted hover:text-foreground"
           }`}
         >
-          Sign up
+          {t("signUp")}
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div>
           <label htmlFor="email" className="text-xs font-mono text-muted block mb-1">
-            Email
+            {t("emailLabel")}
           </label>
           <input
             id="email"
@@ -133,14 +135,14 @@ function LoginForm() {
         <div>
           <div className="flex items-center justify-between mb-1">
             <label htmlFor="password" className="text-xs font-mono text-muted">
-              Password
+              {t("passwordLabel")}
             </label>
             {mode === "signin" && (
               <Link
                 href="/reset-password"
                 className="text-xs font-mono text-accent-indigo hover:text-accent-aqua transition-colors"
               >
-                Forgot password?
+                {t("forgotPassword")}
               </Link>
             )}
           </div>
@@ -159,7 +161,7 @@ function LoginForm() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-muted hover:text-foreground transition-colors"
-              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? t("hidePasswordLabel") : t("showPasswordLabel")}
               tabIndex={-1}
             >
               {showPassword ? (
@@ -183,7 +185,7 @@ function LoginForm() {
           className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-accent-indigo text-background py-2.5 text-sm font-medium hover:bg-accent-aqua transition-colors disabled:opacity-60"
         >
           {busy && <Spinner className="w-4 h-4 text-background" />}
-          {checkingEmail ? "Checking email…" : mode === "signin" ? "Sign in" : "Sign up"}
+          {checkingEmail ? t("checkingEmail") : mode === "signin" ? t("signIn") : t("signUp")}
         </button>
       </form>
     </div>

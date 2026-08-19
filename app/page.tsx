@@ -8,6 +8,7 @@ import FileUpload from "@/components/FileUpload";
 import DataPreview from "@/components/DataPreview";
 import QueryLedger from "@/components/QueryLedger";
 import AuthStatus from "@/components/AuthStatus";
+import LanguageDropdown from "@/components/LanguageDropdown";
 import Sidebar from "@/components/Sidebar";
 import Spinner from "@/components/Spinner";
 import { createClient } from "@/lib/supabase/client";
@@ -33,7 +34,7 @@ interface PendingAsk {
 }
 
 export default function Home() {
-  const { t } = useSettings();
+  const { t, language, tone, expertise } = useSettings();
   const [data, setData] = useState<ParsedCsv | null>(null);
   const [question, setQuestion] = useState("");
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
@@ -81,6 +82,9 @@ export default function Home() {
           columns: askData.columns,
           kind: askData.kind,
           question: askQuestion,
+          language,
+          tone,
+          expertise,
         }),
       });
       const json = await res.json();
@@ -240,6 +244,13 @@ export default function Home() {
     setAuthNotice(false);
   }
 
+  function handleChatDeleted(chatId: string) {
+  setChats((prev) => prev.filter((c) => c.id !== chatId));
+  if (selectedChatId === chatId) {
+    handleNewChat();
+  }
+}
+
   async function handleAsk(e: React.FormEvent) {
     e.preventDefault();
     if (!data || !question.trim() || submitting) return;
@@ -275,6 +286,7 @@ export default function Home() {
           selectedChatId={selectedChatId}
           onSelect={handleSelectChat}
           onNewChat={handleNewChat}
+          onChatDeleted={handleChatDeleted}
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           loading={chatsLoading}
@@ -300,7 +312,10 @@ export default function Home() {
             ) : (
               <span />
             )}
-            <AuthStatus />
+            <div className="flex items-center gap-3">
+              <LanguageDropdown />
+              <AuthStatus />
+            </div>
           </div>
 
           <header className="mb-10">

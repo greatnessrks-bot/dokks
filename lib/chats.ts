@@ -67,8 +67,6 @@ export async function loadChatWithEntries(
     return null;
   }
 
-  // Older rows saved before the kind column existed default to "tabular"
-  // via the DB column default, so this always resolves to a valid kind.
   const kind = (chatRow.kind as DocumentKind) ?? "tabular";
 
   let parsedCsv: ParsedCsv | null;
@@ -125,4 +123,17 @@ export async function saveChatEntry(
   if (error) {
     console.error("Failed to save chat entry:", error);
   }
+}
+
+export async function deleteChat(chatId: string): Promise<boolean> {
+  const supabase = createClient();
+
+  const { error } = await supabase.from("chats").delete().eq("id", chatId);
+
+  if (error) {
+    console.error("Failed to delete chat:", error);
+    return false;
+  }
+
+  return true;
 }

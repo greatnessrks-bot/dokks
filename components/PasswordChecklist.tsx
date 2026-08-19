@@ -2,6 +2,7 @@
 
 import { Check, X } from "lucide-react";
 import { checkPassword, ALLOWED_SYMBOLS } from "@/lib/password";
+import { useSettings } from "@/contexts/SettingsContext";
 
 function Rule({ met, label }: { met: boolean; label: string }) {
   return (
@@ -17,15 +18,16 @@ function Rule({ met, label }: { met: boolean; label: string }) {
 }
 
 export default function PasswordChecklist({ password }: { password: string }) {
+  const { t } = useSettings();
   const check = checkPassword(password);
 
   return (
     <ul className="flex flex-col gap-1 mt-2">
-      <Rule met={check.minLength} label="At least 8 characters" />
-      <Rule met={check.hasLetter} label="At least one letter" />
-      <Rule met={check.hasNumber} label="At least one number" />
-      <Rule met={check.hasSymbol} label={`At least one symbol (${ALLOWED_SYMBOLS})`} />
-      <Rule met={check.onlyAllowedChars} label="No punctuation, hyphens, or underscores" />
+      <Rule met={check.minLength} label={t("pwMinLength")} />
+      <Rule met={check.hasLetter} label={t("pwHasLetter")} />
+      <Rule met={check.hasNumber} label={t("pwHasNumber")} />
+      <Rule met={check.hasSymbol} label={`${t("pwHasSymbol")} (${ALLOWED_SYMBOLS})`} />
+      <Rule met={check.onlyAllowedChars} label={t("pwOnlyAllowedChars")} />
     </ul>
   );
 }
