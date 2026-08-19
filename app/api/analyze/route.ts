@@ -18,6 +18,32 @@ interface AnalyzeResponse {
   chart: ChartSpec | null;
 }
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: "English",
+  fr: "French",
+  es: "Spanish",
+};
+
+const TONE_INSTRUCTIONS: Record<string, string> = {
+  concise: "Keep the answer brief and to the point — a sentence or two where possible.",
+  balanced: "Give a reasonably detailed answer without being overly long.",
+  detailed: "Give a thorough, detailed answer with relevant context and nuance.",
+};
+
+const EXPERTISE_INSTRUCTIONS: Record<string, string> = {
+  beginner:
+    "Explain in simple terms, avoiding technical or statistical jargon, as if speaking to someone new to data analysis.",
+  intermediate: "Assume general familiarity with basic data analysis concepts.",
+  expert:
+    "You may use technical/statistical terminology freely and assume strong data analysis expertise.",
+};
+
+const CHART_SCHEMA_INSTRUCTION = `When you include a non-null "chart", follow this EXACTLY:
+- "data" must be an array of plain JSON objects.
+- Every object's property names must be the EXACT same strings as "xKey" and "yKey" (case-sensitive). Example: if "xKey" is "Month", every object must have a "Month" property — not "month", not "date", not anything else.
+- EVERY object in "data" must include BOTH the "xKey" and "yKey" properties — never omit one, even if a value is 0.
+- The value for "yKey" in every object must be a plain number — no currency symbols, no thousands separators (commas), no percent signs, no units. E.g. use 260000, not "$260,000". Put any formatted/currency version only in the "answer" text, never inside chart data.`;
+
 // Gemini's free-tier daily quota resets at midnight Pacific Time.
 // This calculates that exact moment as a UTC timestamp so the client
 // can render it in the visitor's own local time.
@@ -78,7 +104,7 @@ async function alertAuthError(message: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { content, columns, kind, question } = await req.json();
+    const { content, columns, kind, question, language, tone, expertise } = await req.json();
 
     if (!content || !question) {
       return NextResponse.json(
@@ -94,6 +120,14 @@ export async function POST(req: NextRequest) {
 
     const isTabular = kind === "tabular" && Array.isArray(columns) && columns.length > 0;
 
+    const languageName = LANGUAGE_NAMES[language] ?? "English";
+    const toneInstruction = TONE_INSTRUCTIONS[tone] ?? TONE_INSTRUCTIONS.balanced;
+    const expertiseInstruction = EXPERTISE_INSTRUCTIONS[expertise] ?? EXPERTISE_INSTRUCTIONS.intermediate;
+
+    const personalizationBlock = `
+
+Respond in ${languageName}, including the "answer" field and any chart "title" — but always keep JSON property names ("answer", "chart", "type", "title", "xKey", "yKey", "data") in English exactly as shown, never translated. ${toneInstruction} ${expertiseInstruction}`;
+
     const systemPrompt = isTabular
       ? `You are a data analyst. You are given a CSV dataset and a question about it in plain English.
 
@@ -101,7 +135,7 @@ Columns available: ${columns.join(", ")}
 
 Respond ONLY with a single valid JSON object, no markdown fences, no preamble. Shape:
 {
-  "answer": "<a clear, concise plain-English answer to the question, referencing actual numbers from the data>",
+  "answer": "<a clear, concise answer to the question, referencing actual numbers from the data>",
   "chart": {
     "type": "bar" | "line",
     "title": "<short chart title>",
@@ -111,16 +145,26 @@ Respond ONLY with a single valid JSON object, no markdown fences, no preamble. S
   } | null
 }
 
-Only include a "chart" object if a chart would meaningfully help answer the question (e.g. trends, comparisons, totals by category). Otherwise set "chart" to null. Keep chart data to at most 20 points, aggregating if necessary.`
+${CHART_SCHEMA_INSTRUCTION}
+
+Only include a "chart" object if a chart would meaningfully help answer the question (e.g. trends, comparisons, totals by category). Otherwise set "chart" to null. Keep chart data to at most 20 points, aggregating if necessary.${personalizationBlock}`
       : `You are a document analyst. You are given the extracted text of a document (Word, PowerPoint, or PDF) and a question about it in plain English.
 
 Respond ONLY with a single valid JSON object, no markdown fences, no preamble. Shape:
 {
-  "answer": "<a clear, concise plain-English answer to the question, referencing specific details from the document>",
-  "chart": null
+  "answer": "<a clear answer to the question, referencing specific details from the document>",
+  "chart": {
+    "type": "bar" | "line",
+    "title": "<short chart title>",
+    "xKey": "<a label field you invent, e.g. 'Month' or 'Category'>",
+    "yKey": "<a numeric field you invent, e.g. 'Revenue'>",
+    "data": [ { "<xKey>": ..., "<yKey>": ... }, ... ]
+  } | null
 }
 
-Charts are rarely appropriate for a text document — only include a non-null "chart" object if the document text itself contains a small set of clearly comparable numeric values worth visualizing (at most 20 points, type "bar" or "line"). Otherwise always set "chart" to null.`;
+${CHART_SCHEMA_INSTRUCTION}
+
+Charts are rarely appropriate for a text document — only include a non-null "chart" object if the document text contains a small set of clearly comparable numeric values worth visualizing (at most 20 points). Otherwise always set "chart" to null.${personalizationBlock}`;
 
     const model = genAI.getGenerativeModel({
       model: "gemini-3.6-flash",

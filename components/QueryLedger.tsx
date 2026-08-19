@@ -22,9 +22,26 @@ const COLORS = {
   amber: "#FFB454",
 };
 
+function toPlainNumber(value: string | number | undefined | null): number {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return 0;
+  const cleaned = value.replace(/[^0-9.-]/g, "");
+  const parsed = parseFloat(cleaned);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
 function ChartBlock({ entry }: { entry: LedgerEntry }) {
   if (!entry.chart) return null;
   const { type, title, xKey, yKey, data } = entry.chart;
+
+  if (!Array.isArray(data) || data.length === 0 || !xKey || !yKey) {
+    return null;
+  }
+
+  const sanitizedData = data.map((row) => ({
+    ...row,
+    [yKey]: toPlainNumber(row?.[yKey]),
+  }));
 
   const tooltipStyle = {
     fontSize: 12,
@@ -39,7 +56,7 @@ function ChartBlock({ entry }: { entry: LedgerEntry }) {
       <p className="text-xs font-mono text-muted mb-2">{title}</p>
       <ResponsiveContainer width="100%" height={220}>
         {type === "bar" ? (
-          <BarChart data={data}>
+          <BarChart data={sanitizedData}>
             <CartesianGrid stroke={COLORS.border} vertical={false} />
             <XAxis
               dataKey={xKey}
@@ -56,7 +73,7 @@ function ChartBlock({ entry }: { entry: LedgerEntry }) {
             <Bar dataKey={yKey} fill={COLORS.aqua} radius={[4, 4, 0, 0]} />
           </BarChart>
         ) : (
-          <LineChart data={data}>
+          <LineChart data={sanitizedData}>
             <CartesianGrid stroke={COLORS.border} vertical={false} />
             <XAxis
               dataKey={xKey}
