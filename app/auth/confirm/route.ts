@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const CONFIRMATION_WINDOW_MS = 5 * 60 * 1000;
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
@@ -13,6 +15,10 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
     if (!error) {
+      if (type === "signup") {
+        const exp = Date.now() + CONFIRMATION_WINDOW_MS;
+        redirect(`/email-confirmed?exp=${exp}`);
+      }
       redirect(next);
     }
   }

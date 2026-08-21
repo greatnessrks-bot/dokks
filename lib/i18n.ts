@@ -68,6 +68,11 @@ const en = {
   cancel: "Cancel",
   delete: "Delete",
   removeFile: "Remove file",
+    emailConfirmedTitle: "Your new account has been successfully confirmed",
+  emailConfirmedBody: "Kindly go back to our site and log in to continue.",
+  goToLogin: "Go to login",
+  linkExpiredTitle: "This link has expired.",
+  linkExpiredBody: "Kindly log in manually.",
 } as const;
 
 const fr: Record<keyof typeof en, string> = {
@@ -138,6 +143,11 @@ const fr: Record<keyof typeof en, string> = {
   cancel: "Annuler",
   delete: "Supprimer",
   removeFile: "Supprimer le fichier",
+    emailConfirmedTitle: "Votre nouveau compte a été confirmé avec succès",
+  emailConfirmedBody: "Veuillez retourner sur notre site et vous connecter pour continuer.",
+  goToLogin: "Se connecter",
+  linkExpiredTitle: "Ce lien a expiré.",
+  linkExpiredBody: "Veuillez vous connecter manuellement.",
 };
 
 const es: Record<keyof typeof en, string> = {
@@ -208,6 +218,11 @@ const es: Record<keyof typeof en, string> = {
   cancel: "Cancelar",
   delete: "Eliminar",
   removeFile: "Eliminar archivo",
+    emailConfirmedTitle: "Tu nueva cuenta ha sido confirmada con éxito",
+  emailConfirmedBody: "Por favor regresa a nuestro sitio e inicia sesión para continuar.",
+  goToLogin: "Iniciar sesión",
+  linkExpiredTitle: "Este enlace ha expirado.",
+  linkExpiredBody: "Por favor inicia sesión manualmente.",
 };
 
 export type TranslationKey = keyof typeof en;
