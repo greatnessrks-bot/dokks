@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Upload, FileSpreadsheet } from "lucide-react";
+import { Upload, FileSpreadsheet, X } from "lucide-react";
 import { parseFile, isSupportedFile } from "@/lib/parseDocument";
 import { useSettings } from "@/contexts/SettingsContext";
 import type { ParsedCsv } from "@/lib/types";
@@ -9,9 +9,11 @@ import type { ParsedCsv } from "@/lib/types";
 interface Props {
   onParsed: (data: ParsedCsv) => void;
   fileName: string | null;
+  onClear?: () => void;
+  canClear?: boolean;
 }
 
-export default function FileUpload({ onParsed, fileName }: Props) {
+export default function FileUpload({ onParsed, fileName, onClear, canClear }: Props) {
   const { t } = useSettings();
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,21 @@ export default function FileUpload({ onParsed, fileName }: Props) {
         }}
         className="absolute inset-0 opacity-0 cursor-pointer"
       />
+
+      {fileName && canClear && onClear && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClear();
+          }}
+          aria-label={t("removeFile")}
+          className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-background/80 border border-border flex items-center justify-center text-muted hover:text-foreground hover:bg-background transition-colors"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      )}
+
       <div className="flex flex-col items-center gap-2 pointer-events-none">
         {fileName ? (
           <>

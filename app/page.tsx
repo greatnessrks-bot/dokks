@@ -221,6 +221,18 @@ export default function Home() {
     }
   }
 
+  async function handleClearFile() {
+  if (user && selectedChatId && entries.length === 0) {
+    const supabase = createClient();
+    await supabase.from("chats").delete().eq("id", selectedChatId);
+    setChats((prev) => prev.filter((c) => c.id !== selectedChatId));
+  }
+  setData(null);
+  setSelectedChatId(null);
+  setEntries([]);
+  setPendingNewFile(null);
+}
+
   function handleNewChat() {
     setData(null);
     setEntries([]);
@@ -340,8 +352,13 @@ export default function Home() {
             </header>
 
             <section className="mb-6">
-              <FileUpload onParsed={handleFileParsed} fileName={data?.fileName ?? null} />
-            </section>
+  <FileUpload
+    onParsed={handleFileParsed}
+    fileName={data?.fileName ?? null}
+    onClear={handleClearFile}
+    canClear={entries.length === 0}
+  />
+</section>
 
             {pendingNewFile && (
               <section className="mb-6 border border-accent-amber/40 bg-accent-amber/5 rounded-lg px-4 py-3 flex items-center justify-between gap-3 flex-wrap">

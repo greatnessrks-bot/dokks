@@ -67,6 +67,7 @@ const en = {
   deleteChatConfirmBody: "This will permanently delete this chat and all its questions and answers.",
   cancel: "Cancel",
   delete: "Delete",
+  removeFile: "Remove file",
 } as const;
 
 const fr: Record<keyof typeof en, string> = {
@@ -136,6 +137,7 @@ const fr: Record<keyof typeof en, string> = {
   deleteChatConfirmBody: "Cette discussion et toutes ses questions et réponses seront définitivement supprimées.",
   cancel: "Annuler",
   delete: "Supprimer",
+  removeFile: "Supprimer le fichier",
 };
 
 const es: Record<keyof typeof en, string> = {
@@ -205,6 +207,7 @@ const es: Record<keyof typeof en, string> = {
   deleteChatConfirmBody: "Este chat y todas sus preguntas y respuestas se eliminarán permanentemente.",
   cancel: "Cancelar",
   delete: "Eliminar",
+  removeFile: "Eliminar archivo",
 };
 
 export type TranslationKey = keyof typeof en;
