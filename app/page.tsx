@@ -1,5 +1,6 @@
 "use client";
 
+import HeroBanner from "@/components/HeroBanner";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, PanelLeft } from "lucide-react";
@@ -245,11 +246,11 @@ export default function Home() {
   }
 
   function handleChatDeleted(chatId: string) {
-  setChats((prev) => prev.filter((c) => c.id !== chatId));
-  if (selectedChatId === chatId) {
-    handleNewChat();
+    setChats((prev) => prev.filter((c) => c.id !== chatId));
+    if (selectedChatId === chatId) {
+      handleNewChat();
+    }
   }
-}
 
   async function handleAsk(e: React.FormEvent) {
     e.preventDefault();
@@ -279,7 +280,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen bg-background flex overflow-hidden">
       {user && (
         <Sidebar
           chats={chats}
@@ -293,9 +294,9 @@ export default function Home() {
         />
       )}
 
-      <div className="flex-1 min-w-0">
-        <div className="max-w-3xl mx-auto px-4 py-10 sm:py-16">
-          <div className="flex items-center justify-between mb-4">
+      <div className="flex-1 min-w-0 flex flex-col h-screen">
+        <header className="shrink-0 bg-background z-20 pt-3">
+          <div className="max-w-3xl mx-auto px-4 pb-3 flex items-center justify-between">
             {user ? (
               <div className="relative group">
                 <button
@@ -317,98 +318,110 @@ export default function Home() {
               <AuthStatus />
             </div>
           </div>
+          <div className="px-8">
+            <div className="h-[3px] rounded-full bg-gradient-to-r from-transparent via-border to-transparent max-w-3xl mx-auto" />
+          </div>
+        </header>
 
-          <header className="mb-10">
-            <p className="font-mono text-xs tracking-widest text-accent-aqua uppercase mb-2">
-              AI Data Analyst
-            </p>
-            <h1 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">
-              {t("heroTitle")}
-            </h1>
-            <p className="mt-2 text-sm text-muted max-w-md">
-              {t("heroSubtitle")}
-            </p>
-          </header>
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-4 py-6 sm:py-10">
+            <HeroBanner />
 
-          <section className="mb-6">
-            <FileUpload onParsed={handleFileParsed} fileName={data?.fileName ?? null} />
-          </section>
+            <header className="mb-10">
+              <p className="font-mono text-xs tracking-widest text-accent-aqua uppercase mb-2">
+                Dokks - Data Analyst
+              </p>
+              <h1 className="font-display text-3xl sm:text-4xl font-semibold text-foreground tracking-tight">
+                {t("heroTitle")}
+              </h1>
+              <p className="mt-2 text-sm text-muted max-w-md">
+                {t("heroSubtitle")}
+              </p>
+            </header>
 
-          {pendingNewFile && (
-            <section className="mb-6 border border-accent-amber/40 bg-accent-amber/5 rounded-lg px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-sm text-foreground">
-                {t("openNewChatPrompt")}
-              </span>
-              <button
-                onClick={() => acceptNewFile(pendingNewFile)}
-                className="font-mono text-xs rounded-md bg-accent-indigo text-background px-3 py-1.5 hover:bg-accent-aqua transition-colors whitespace-nowrap"
-              >
-                {t("openNewChat")}
-              </button>
+            <section className="mb-6">
+              <FileUpload onParsed={handleFileParsed} fileName={data?.fileName ?? null} />
             </section>
-          )}
 
-          {chatLoading ? (
-            <div className="mb-6 flex justify-center py-10">
-              <Spinner className="w-6 h-6 text-accent-indigo" />
-            </div>
-          ) : (
-            <>
-              {data && (
-                <section className="mb-6">
-                  <DataPreview data={data} />
-                </section>
-              )}
+            {pendingNewFile && (
+              <section className="mb-6 border border-accent-amber/40 bg-accent-amber/5 rounded-lg px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+                <span className="text-sm text-foreground">
+                  {t("openNewChatPrompt")}
+                </span>
+                <button
+                  onClick={() => acceptNewFile(pendingNewFile)}
+                  className="font-mono text-xs rounded-md bg-accent-indigo text-background px-3 py-1.5 hover:bg-accent-aqua transition-colors whitespace-nowrap"
+                >
+                  {t("openNewChat")}
+                </button>
+              </section>
+            )}
 
-              <section className="mb-6">
-                <form onSubmit={handleAsk} className="relative">
-                  <div className="flex gap-2 p-[1.5px] rounded-lg bg-gradient-to-r from-accent-indigo/60 via-accent-aqua/60 to-accent-indigo/60 focus-within:from-accent-indigo focus-within:via-accent-aqua focus-within:to-accent-indigo transition-colors">
-                    <div className="flex flex-1 gap-2 rounded-[7px] bg-surface p-1">
-                      <input
-                        type="text"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        disabled={!data || submitting}
-                        placeholder={
-                          data ? t("askPlaceholder") : t("uploadFileFirst")
-                        }
-                        className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted disabled:opacity-50 focus:outline-none"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!data || !question.trim() || submitting}
-                        className="px-3 rounded-md bg-accent-indigo text-background disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent-aqua transition-colors"
-                        aria-label="Ask"
-                      >
-                        {submitting ? (
-                          <Spinner className="w-4 h-4 text-background" />
-                        ) : (
-                          <ArrowUp className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-
-                {authNotice && (
-                  <div className="mt-3 border border-accent-indigo/40 bg-accent-indigo/5 rounded-lg px-4 py-3 text-sm text-foreground flex items-center justify-between gap-3 flex-wrap">
-                    <span>{t("pleaseLogin")}</span>
-                    <Link
-                      href="/login"
-                      className="font-mono text-xs text-accent-indigo hover:text-accent-aqua transition-colors whitespace-nowrap"
-                    >
-                      {t("signInSignUp")}
-                    </Link>
-                  </div>
+            {chatLoading ? (
+              <div className="mb-6 flex justify-center py-10">
+                <Spinner className="w-6 h-6 text-accent-indigo" />
+              </div>
+            ) : (
+              <>
+                {data && (
+                  <section className="mb-6">
+                    <DataPreview data={data} />
+                  </section>
                 )}
-              </section>
 
-              <section>
-                <QueryLedger entries={entries} />
-              </section>
-            </>
-          )}
+                <section>
+                  <QueryLedger entries={entries} />
+                </section>
+              </>
+            )}
+          </div>
         </div>
+
+        <footer className="shrink-0 bg-background z-20 relative">
+          <div className="pointer-events-none absolute -top-10 left-0 right-0 h-10 bg-gradient-to-t from-background to-transparent" />
+          <div className="max-w-3xl mx-auto px-4 pb-10 pt-2">
+            <form onSubmit={handleAsk} className="relative">
+              <div className="flex gap-2 p-[1.5px] rounded-lg bg-gradient-to-r from-accent-indigo/60 via-accent-aqua/60 to-accent-indigo/60 focus-within:from-accent-indigo focus-within:via-accent-aqua focus-within:to-accent-indigo transition-colors">
+                <div className="flex flex-1 gap-2 rounded-[7px] bg-surface p-1">
+                  <input
+                    type="text"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    disabled={!data || submitting}
+                    placeholder={
+                      data ? t("askPlaceholder") : t("uploadFileFirst")
+                    }
+                    className="flex-1 bg-transparent px-3 py-2.5 text-sm text-foreground placeholder:text-muted disabled:opacity-50 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!data || !question.trim() || submitting}
+                    className="px-3 rounded-md bg-accent-indigo text-background disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent-aqua transition-colors"
+                    aria-label="Ask"
+                  >
+                    {submitting ? (
+                      <Spinner className="w-4 h-4 text-background" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {authNotice && (
+              <div className="mt-3 border border-accent-indigo/40 bg-accent-indigo/5 rounded-lg px-4 py-3 text-sm text-foreground flex items-center justify-between gap-3 flex-wrap">
+                <span>{t("pleaseLogin")}</span>
+                <Link
+                  href="/login"
+                  className="font-mono text-xs text-accent-indigo hover:text-accent-aqua transition-colors whitespace-nowrap"
+                >
+                  {t("signInSignUp")}
+                </Link>
+              </div>
+            )}
+          </div>
+        </footer>
       </div>
     </div>
   );

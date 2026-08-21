@@ -57,3 +57,19 @@ body {
   font-family: var(--font-sans);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+@keyframes gradient-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-flow {
+  animation: gradient-flow 8s ease-in-out infinite;
+}
