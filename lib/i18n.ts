@@ -73,6 +73,8 @@ const en = {
   goToLogin: "Go to login",
   linkExpiredTitle: "This link has expired.",
   linkExpiredBody: "Kindly log in manually.",
+    camera: "Camera",
+  gallery: "Gallery",
 } as const;
 
 const fr: Record<keyof typeof en, string> = {
@@ -148,6 +150,8 @@ const fr: Record<keyof typeof en, string> = {
   goToLogin: "Se connecter",
   linkExpiredTitle: "Ce lien a expiré.",
   linkExpiredBody: "Veuillez vous connecter manuellement.",
+    camera: "Appareil photo",
+  gallery: "Galerie",
 };
 
 const es: Record<keyof typeof en, string> = {
@@ -223,6 +227,8 @@ const es: Record<keyof typeof en, string> = {
   goToLogin: "Iniciar sesión",
   linkExpiredTitle: "Este enlace ha expirado.",
   linkExpiredBody: "Por favor inicia sesión manualmente.",
+    camera: "Cámara",
+  gallery: "Galería",
 };
 
 export type TranslationKey = keyof typeof en;

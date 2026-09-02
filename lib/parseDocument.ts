@@ -5,6 +5,7 @@ import { parseCsvFile } from "@/lib/csv";
 import type { ParsedCsv } from "@/lib/types";
 
 const SUPPORTED_EXTENSIONS = [".csv", ".xlsx", ".xls", ".docx", ".pptx", ".pdf"];
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 export function isSupportedFile(fileName: string): boolean {
   const lower = fileName.toLowerCase();
@@ -108,4 +109,46 @@ async function parsePdfFile(file: File): Promise<ParsedCsv> {
   const rawText = pageTexts.join("\n\n");
 
   return { fileName: file.name, kind: "text", columns: [], rows: [], rawText };
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(",")[1] ?? "";
+      resolve(base64);
+    };
+    reader.onerror = () => reject(new Error("Couldn't read that image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function parseImageFile(file: File): Promise<ParsedCsv> {
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error("That image is too large. Please use one under 10MB.");
+  }
+
+  const imageBase64 = await fileToBase64(file);
+  const mimeType = file.type || "image/jpeg";
+
+  const res = await fetch("/api/ocr", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageBase64, mimeType }),
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json.error || "Couldn't read that image.");
+  }
+
+  return {
+    fileName: file.name || "Photo",
+    kind: "text",
+    columns: [],
+    rows: [],
+    rawText: json.text,
+  };
 }

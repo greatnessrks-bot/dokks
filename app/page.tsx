@@ -12,6 +12,7 @@ import AuthStatus from "@/components/AuthStatus";
 import LanguageDropdown from "@/components/LanguageDropdown";
 import Sidebar from "@/components/Sidebar";
 import Spinner from "@/components/Spinner";
+import AttachMenu from "@/components/AttachMenu";
 import { createClient } from "@/lib/supabase/client";
 import { useSettings } from "@/contexts/SettingsContext";
 import {
@@ -222,16 +223,16 @@ export default function Home() {
   }
 
   async function handleClearFile() {
-  if (user && selectedChatId && entries.length === 0) {
-    const supabase = createClient();
-    await supabase.from("chats").delete().eq("id", selectedChatId);
-    setChats((prev) => prev.filter((c) => c.id !== selectedChatId));
+    if (user && selectedChatId && entries.length === 0) {
+      const supabase = createClient();
+      await supabase.from("chats").delete().eq("id", selectedChatId);
+      setChats((prev) => prev.filter((c) => c.id !== selectedChatId));
+    }
+    setData(null);
+    setSelectedChatId(null);
+    setEntries([]);
+    setPendingNewFile(null);
   }
-  setData(null);
-  setSelectedChatId(null);
-  setEntries([]);
-  setPendingNewFile(null);
-}
 
   function handleNewChat() {
     setData(null);
@@ -352,13 +353,13 @@ export default function Home() {
             </header>
 
             <section className="mb-6">
-  <FileUpload
-    onParsed={handleFileParsed}
-    fileName={data?.fileName ?? null}
-    onClear={handleClearFile}
-    canClear={entries.length === 0}
-  />
-</section>
+              <FileUpload
+                onParsed={handleFileParsed}
+                fileName={data?.fileName ?? null}
+                onClear={handleClearFile}
+                canClear={entries.length === 0}
+              />
+            </section>
 
             {pendingNewFile && (
               <section className="mb-6 border border-accent-amber/40 bg-accent-amber/5 rounded-lg px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
@@ -399,7 +400,8 @@ export default function Home() {
           <div className="max-w-3xl mx-auto px-4 pb-10 pt-2">
             <form onSubmit={handleAsk} className="relative">
               <div className="flex gap-2 p-[1.5px] rounded-lg bg-gradient-to-r from-accent-indigo/60 via-accent-aqua/60 to-accent-indigo/60 focus-within:from-accent-indigo focus-within:via-accent-aqua focus-within:to-accent-indigo transition-colors">
-                <div className="flex flex-1 gap-2 rounded-[7px] bg-surface p-1">
+                <div className="flex flex-1 items-center gap-2 rounded-[7px] bg-surface p-1">
+                  <AttachMenu onParsed={handleFileParsed} disabled={submitting} />
                   <input
                     type="text"
                     value={question}
