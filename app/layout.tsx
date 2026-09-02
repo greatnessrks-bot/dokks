@@ -19,8 +19,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Data Analyst — ask your spreadsheet a question",
-  description: "Upload a CSV and ask plain-English questions about your data.",
+  title: "Dokks",
+  description: "Upload a CSV, Excel, Word, Powerpoint, or PDF and ask plain-English questions about your document.",
 };
 
 const noFlashScript = `
