@@ -75,6 +75,7 @@ const en = {
   linkExpiredBody: "Kindly log in manually.",
     camera: "Camera",
   gallery: "Gallery",
+    confirmLogoutTitle: "Are you sure you want to log out?",
 } as const;
 
 const fr: Record<keyof typeof en, string> = {
@@ -152,6 +153,7 @@ const fr: Record<keyof typeof en, string> = {
   linkExpiredBody: "Veuillez vous connecter manuellement.",
     camera: "Appareil photo",
   gallery: "Galerie",
+    confirmLogoutTitle: "Voulez-vous vraiment vous déconnecter ?",
 };
 
 const es: Record<keyof typeof en, string> = {
@@ -229,6 +231,7 @@ const es: Record<keyof typeof en, string> = {
   linkExpiredBody: "Por favor inicia sesión manualmente.",
     camera: "Cámara",
   gallery: "Galería",
+    confirmLogoutTitle: "¿Seguro que quieres cerrar sesión?",
 };
 
 export type TranslationKey = keyof typeof en;

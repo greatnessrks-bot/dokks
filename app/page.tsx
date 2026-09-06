@@ -52,6 +52,9 @@ export default function Home() {
   const [pendingNewFile, setPendingNewFile] = useState<ParsedCsv | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [previewMounted, setPreviewMounted] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
+
   const hasResumedPending = useRef(false);
   const hasLoadedChats = useRef(false);
 
@@ -198,6 +201,18 @@ export default function Home() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authChecked, user]);
+
+  useEffect(() => {
+    if (data) {
+      setPreviewMounted(true);
+      const frame = requestAnimationFrame(() => setPreviewVisible(true));
+      return () => cancelAnimationFrame(frame);
+    } else {
+      setPreviewVisible(false);
+      const timer = setTimeout(() => setPreviewMounted(false), 250);
+      return () => clearTimeout(timer);
+    }
+  }, [data]);
 
   async function handleFileParsed(parsed: ParsedCsv) {
     if (data) {
@@ -381,8 +396,14 @@ export default function Home() {
               </div>
             ) : (
               <>
-                {data && (
-                  <section className="mb-6">
+                {previewMounted && data && (
+                  <section
+                    className={`mb-6 overflow-hidden transition-all duration-250 ease-out ${
+                      previewVisible
+                        ? "opacity-100 translate-y-0 max-h-[600px]"
+                        : "opacity-0 -translate-y-2 max-h-0"
+                    }`}
+                  >
                     <DataPreview data={data} />
                   </section>
                 )}
@@ -415,7 +436,7 @@ export default function Home() {
                   <button
                     type="submit"
                     disabled={!data || !question.trim() || submitting}
-                    className="px-3 rounded-md bg-accent-indigo text-background disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent-aqua transition-colors"
+                    className="self-stretch my-0.5 px-3 rounded-md bg-accent-indigo text-background disabled:opacity-30 disabled:cursor-not-allowed hover:bg-accent-aqua transition-colors"
                     aria-label="Ask"
                   >
                     {submitting ? (

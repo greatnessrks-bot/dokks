@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileText, Plus, Settings, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { ChatSummary } from "@/lib/chats";
@@ -27,6 +27,7 @@ interface MenuState {
 }
 
 const LONG_PRESS_MS = 500;
+const BACKDROP_DURATION_MS = 300;
 
 export default function Sidebar({
   chats,
@@ -43,6 +44,20 @@ export default function Sidebar({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [backdropMounted, setBackdropMounted] = useState(open);
+  const [backdropVisible, setBackdropVisible] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setBackdropMounted(true);
+      requestAnimationFrame(() => setBackdropVisible(true));
+    } else {
+      setBackdropVisible(false);
+      const timer = setTimeout(() => setBackdropMounted(false), BACKDROP_DURATION_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   function openMenu(chatId: string, fileName: string, x: number, y: number) {
     setMenu({ chatId, fileName, x, y });
@@ -84,17 +99,19 @@ export default function Sidebar({
 
   return (
     <>
-      {open && (
+      {backdropMounted && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className={`fixed inset-0 bg-black/50 z-30 md:hidden transition-opacity duration-300 ease-out ${
+            backdropVisible ? "opacity-100" : "opacity-0"
+          }`}
           onClick={onClose}
         />
       )}
       <aside
-        className={`fixed md:sticky md:top-0 inset-y-0 left-0 z-40 h-screen border-r border-border bg-surface flex flex-col overflow-hidden transition-all duration-200 ${
+        className={`fixed md:sticky md:top-0 inset-y-0 left-0 z-40 h-screen border-r border-border bg-surface flex flex-col overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] w-64 ${
           open
-            ? "translate-x-0 w-64"
-            : "-translate-x-full w-64 md:translate-x-0 md:w-0 md:border-r-0"
+            ? "translate-x-0"
+            : "-translate-x-full md:translate-x-0 md:w-0 md:border-r-0"
         }`}
       >
         <div className="w-64 flex flex-col h-full shrink-0">
@@ -175,8 +192,8 @@ export default function Sidebar({
       )}
 
       {confirmingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-5 animate-[popIn_0.2s_ease-out]">
             <h3 className="text-sm font-semibold text-foreground mb-2">
               {t("deleteChatConfirmTitle")}
             </h3>
