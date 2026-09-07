@@ -44,6 +44,12 @@ const CHART_SCHEMA_INSTRUCTION = `When you include a non-null "chart", follow th
 - EVERY object in "data" must include BOTH the "xKey" and "yKey" properties — never omit one, even if a value is 0.
 - The value for "yKey" in every object must be a plain number — no currency symbols, no thousands separators (commas), no percent signs, no units. E.g. use 260000, not "$260,000". Put any formatted/currency version only in the "answer" text, never inside chart data.`;
 
+const ANSWER_FORMATTING_INSTRUCTION = `Format the "answer" text for readability:
+- Separate distinct ideas, points, or sections with a blank line (i.e. two newline characters, "\\n\\n") between them — never write one dense unbroken paragraph.
+- When listing multiple items (e.g. several stats, categories, or takeaways), use a line-by-line list where each item starts with "- " on its own line, rather than cramming items into one sentence separated by commas.
+- Do not use markdown formatting like headers (#), bold (**text**), or italics — plain text with line breaks and "- " list items only.
+- Keep individual paragraphs short (2-4 sentences) rather than long blocks of text.`;
+
 // Gemini's free-tier daily quota resets at midnight Pacific Time.
 // This calculates that exact moment as a UTC timestamp so the client
 // can render it in the visitor's own local time.

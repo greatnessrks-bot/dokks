@@ -30,6 +30,41 @@ function toPlainNumber(value: string | number | undefined | null): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+function renderInlineFormatting(text: string) {
+  const parts = text.split(/(\*\*.+?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
+function renderFormattedAnswer(text: string) {
+  const blocks = text.split(/\n\s*\n/).filter((b) => b.trim().length > 0);
+
+  return blocks.map((block, i) => {
+    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    const isList = lines.length > 0 && lines.every((l) => l.startsWith("- ") || l.startsWith("• "));
+
+    if (isList) {
+      return (
+        <ul key={i} className="list-disc pl-5 space-y-1">
+          {lines.map((line, j) => (
+            <li key={j}>{renderInlineFormatting(line.replace(/^[-•]\s*/, ""))}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    return (
+      <p key={i} className="whitespace-pre-wrap">
+        {renderInlineFormatting(lines.join(" "))}
+      </p>
+    );
+  });
+}
+
 function ChartBlock({ entry }: { entry: LedgerEntry }) {
   if (!entry.chart) return null;
   const { type, title, xKey, yKey, data } = entry.chart;
@@ -101,7 +136,12 @@ function ChartBlock({ entry }: { entry: LedgerEntry }) {
   );
 }
 
-export default function QueryLedger({ entries }: { entries: LedgerEntry[] }) {
+interface Props {
+  entries: LedgerEntry[];
+  newEntryIds?: Set<string>;
+}
+
+export default function QueryLedger({ entries, newEntryIds }: Props) {
   if (entries.length === 0) {
     return (
       <div className="border border-dashed border-border rounded-xl px-6 py-10 text-center">
@@ -115,45 +155,53 @@ export default function QueryLedger({ entries }: { entries: LedgerEntry[] }) {
 
   return (
     <div className="border border-border rounded-xl overflow-hidden">
-      {entries.map((entry, i) => (
-        <div
-          key={entry.id}
-          data-entry-id={entry.id}
-          className={`px-4 py-4 ${
-            i !== entries.length - 1 ? "border-b border-border/60" : ""
-          }`}
-        >
-          <div className="flex gap-3">
-            <span className="font-mono text-xs text-accent-indigo pt-0.5 w-6 shrink-0">
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">
-                {entry.question}
-              </p>
-              {entry.status === "pending" && (
-                <div className="flex items-center gap-2 mt-2 text-muted">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span className="text-xs font-mono">analyzing…</span>
-                </div>
-              )}
-              {entry.status === "error" && (
-                <p className="mt-2 text-xs font-mono text-accent-amber">
-                  {entry.answer}
+      {entries.map((entry, i) => {
+        const shouldAnimate = newEntryIds?.has(entry.id) ?? false;
+
+        return (
+          <div
+            key={entry.id}
+            data-entry-id={entry.id}
+            className={`px-4 py-4 ${
+              i !== entries.length - 1 ? "border-b border-border/60" : ""
+            }`}
+          >
+            <div className="flex gap-3">
+              <span className="font-mono text-xs text-accent-indigo pt-0.5 w-6 shrink-0">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">
+                  {entry.question}
                 </p>
-              )}
-              {entry.status === "done" && (
-                <>
-                  <p className="mt-2 text-sm text-foreground/80 leading-relaxed border-l-2 border-accent-aqua pl-3">
+                {entry.status === "pending" && (
+                  <div className="flex items-center gap-2 mt-2 text-muted">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span className="text-xs font-mono">analyzing…</span>
+                  </div>
+                )}
+                {entry.status === "error" && (
+                  <p
+                    className={`mt-2 text-xs font-mono text-accent-amber ${
+                      shouldAnimate ? "animate-[slideDownIn_0.35s_ease-out]" : ""
+                    }`}
+                  >
                     {entry.answer}
                   </p>
-                  <ChartBlock entry={entry} />
-                </>
-              )}
+                )}
+                {entry.status === "done" && (
+                  <div className={shouldAnimate ? "animate-[slideDownIn_0.35s_ease-out]" : ""}>
+                    <div className="mt-2 text-sm text-foreground/80 leading-relaxed border-l-2 border-accent-aqua pl-3 space-y-3">
+                      {renderFormattedAnswer(entry.answer)}
+                    </div>
+                    <ChartBlock entry={entry} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

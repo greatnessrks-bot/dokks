@@ -159,6 +159,7 @@ export default function HeroBanner() {
             src="/dokks-logo.png"
             alt="Dokks"
             fill
+            sizes="(max-width: 640px) 300px, 400px"
             className="object-contain"
             priority
           />

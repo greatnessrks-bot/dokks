@@ -29,6 +29,7 @@ interface ApiError extends Error {
 }
 
 const PENDING_KEY = "ai-data-analyst:pending-ask";
+const SCROLL_THRESHOLD_PX = 40;
 
 interface PendingAsk {
   data: ParsedCsv;
@@ -55,8 +56,11 @@ export default function Home() {
   const [previewMounted, setPreviewMounted] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
 
+  const [animatedEntryIds, setAnimatedEntryIds] = useState<Set<string>>(new Set());
+
   const hasResumedPending = useRef(false);
   const hasLoadedChats = useRef(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const refreshChats = useCallback(async (userId: string) => {
     setChatsLoading(true);
@@ -64,6 +68,26 @@ export default function Home() {
     setChats(list);
     setChatsLoading(false);
   }, []);
+
+  function isNearBottom() {
+    const el = scrollContainerRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD_PX;
+  }
+
+  function scrollToBottomSmooth() {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }
+
+  function scrollToBottomIfNeeded() {
+    requestAnimationFrame(() => {
+      if (!isNearBottom()) {
+        scrollToBottomSmooth();
+      }
+    });
+  }
 
   async function runAsk(
     askData: ParsedCsv,
@@ -73,10 +97,12 @@ export default function Home() {
   ) {
     const id = crypto.randomUUID();
     setSubmitting(true);
+    setAnimatedEntryIds((prev) => new Set(prev).add(id));
     setEntries((prev) => [
       ...prev,
       { id, question: askQuestion, answer: "", chart: null, status: "pending" },
     ]);
+    scrollToBottomIfNeeded();
 
     try {
       const res = await fetch("/api/analyze", {
@@ -107,6 +133,7 @@ export default function Home() {
             : entry
         )
       );
+      scrollToBottomIfNeeded();
 
       if (forUser && chatId) {
         saveChatEntry(chatId, forUser.id, {
@@ -141,6 +168,7 @@ export default function Home() {
             : entry
         )
       );
+      scrollToBottomIfNeeded();
     } finally {
       setSubmitting(false);
     }
@@ -351,7 +379,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto px-4 py-6 sm:py-10">
             <HeroBanner />
 
@@ -409,7 +437,7 @@ export default function Home() {
                 )}
 
                 <section>
-                  <QueryLedger entries={entries} />
+                  <QueryLedger entries={entries} newEntryIds={animatedEntryIds} />
                 </section>
               </>
             )}
