@@ -15,11 +15,13 @@ import Spinner from "@/components/Spinner";
 import AttachMenu from "@/components/AttachMenu";
 import { createClient } from "@/lib/supabase/client";
 import { useSettings } from "@/contexts/SettingsContext";
+import { uploadChatImage, parseDataUrl } from "@/lib/chatImages";
 import {
   createChat,
   loadChats,
   loadChatWithEntries,
   saveChatEntry,
+  updateChatImageUrl,
   type ChatSummary,
 } from "@/lib/chats";
 import type { LedgerEntry, ParsedCsv } from "@/lib/types";
@@ -87,6 +89,24 @@ export default function Home() {
         scrollToBottomSmooth();
       }
     });
+  }
+
+  async function persistChatImageIfNeeded(userId: string, chatId: string, parsed: ParsedCsv) {
+    if (!parsed.imagePreviewUrl || !parsed.imagePreviewUrl.startsWith("data:")) return;
+
+    const parsedUrl = parseDataUrl(parsed.imagePreviewUrl);
+    if (!parsedUrl) return;
+
+    const publicUrl = await uploadChatImage(userId, chatId, parsedUrl.base64, parsedUrl.mimeType);
+    if (!publicUrl) return;
+
+    await updateChatImageUrl(chatId, publicUrl);
+
+    setData((prev) =>
+      prev && prev.imagePreviewUrl === parsed.imagePreviewUrl
+        ? { ...prev, imagePreviewUrl: publicUrl }
+        : prev
+    );
   }
 
   async function runAsk(
@@ -222,6 +242,10 @@ export default function Home() {
         setSelectedChatId(newChatId);
         refreshChats(user.id);
 
+        if (newChatId) {
+          persistChatImageIfNeeded(user.id, newChatId, pending.data);
+        }
+
         await runAsk(pending.data, pending.question, user, newChatId);
       } catch {
         // Malformed/stale payload — safe to ignore, user just asks again.
@@ -262,6 +286,9 @@ export default function Home() {
       const newChatId = await createChat(user.id, parsed.fileName, parsed.rawText, parsed.kind);
       setSelectedChatId(newChatId);
       refreshChats(user.id);
+      if (newChatId) {
+        persistChatImageIfNeeded(user.id, newChatId, parsed);
+      }
     }
   }
 
@@ -399,6 +426,7 @@ export default function Home() {
               <FileUpload
                 onParsed={handleFileParsed}
                 fileName={data?.fileName ?? null}
+                imagePreviewUrl={data?.imagePreviewUrl ?? null}
                 onClear={handleClearFile}
                 canClear={entries.length === 0}
               />

@@ -22,4 +22,5 @@ export interface ParsedCsv {
   columns: string[];
   rows: Record<string, string>[];
   rawText: string;
+  imagePreviewUrl?: string;
 }

@@ -131,6 +131,7 @@ export async function parseImageFile(file: File): Promise<ParsedCsv> {
 
   const imageBase64 = await fileToBase64(file);
   const mimeType = file.type || "image/jpeg";
+  const imagePreviewUrl = `data:${mimeType};base64,${imageBase64}`;
 
   const res = await fetch("/api/ocr", {
     method: "POST",
@@ -150,5 +151,6 @@ export async function parseImageFile(file: File): Promise<ParsedCsv> {
     columns: [],
     rows: [],
     rawText: json.text,
+    imagePreviewUrl,
   };
 }

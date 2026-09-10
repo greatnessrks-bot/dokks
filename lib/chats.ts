@@ -51,6 +51,18 @@ export async function createChat(
   return data.id as string;
 }
 
+export async function updateChatImageUrl(chatId: string, imageUrl: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("chats")
+    .update({ image_url: imageUrl })
+    .eq("id", chatId);
+
+  if (error) {
+    console.error("Failed to update chat image URL:", error);
+  }
+}
+
 export async function loadChatWithEntries(
   chatId: string
 ): Promise<{ parsedCsv: ParsedCsv; entries: LedgerEntry[] } | null> {
@@ -58,7 +70,7 @@ export async function loadChatWithEntries(
 
   const { data: chatRow, error: chatError } = await supabase
     .from("chats")
-    .select("file_name, csv_text, kind")
+    .select("file_name, csv_text, kind, image_url")
     .eq("id", chatId)
     .single();
 
@@ -77,6 +89,7 @@ export async function loadChatWithEntries(
       columns: [],
       rows: [],
       rawText: chatRow.csv_text,
+      imagePreviewUrl: chatRow.image_url ?? undefined,
     };
   } else {
     parsedCsv = parseCsvText(chatRow.file_name, chatRow.csv_text);

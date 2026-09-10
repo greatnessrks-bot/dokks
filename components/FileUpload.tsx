@@ -9,11 +9,18 @@ import type { ParsedCsv } from "@/lib/types";
 interface Props {
   onParsed: (data: ParsedCsv) => void;
   fileName: string | null;
+  imagePreviewUrl?: string | null;
   onClear?: () => void;
   canClear?: boolean;
 }
 
-export default function FileUpload({ onParsed, fileName, onClear, canClear }: Props) {
+export default function FileUpload({
+  onParsed,
+  fileName,
+  imagePreviewUrl,
+  onClear,
+  canClear,
+}: Props) {
   const { t } = useSettings();
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +52,7 @@ export default function FileUpload({ onParsed, fileName, onClear, canClear }: Pr
         const file = e.dataTransfer.files?.[0];
         if (file) handleFile(file);
       }}
-      className={`relative border-2 border-dashed rounded-xl px-6 py-10 text-center transition-all ${
+      className={`relative border-2 border-dashed rounded-xl px-6 py-10 text-center transition-all overflow-hidden ${
         isDragging
           ? "border-accent-indigo bg-accent-indigo/5 shadow-[0_0_24px_-4px_rgba(124,111,255,0.35)]"
           : "border-border bg-surface"
@@ -59,7 +66,7 @@ export default function FileUpload({ onParsed, fileName, onClear, canClear }: Pr
           if (file) handleFile(file);
           e.target.value = "";
         }}
-        className="absolute inset-0 opacity-0 cursor-pointer"
+        className="absolute inset-0 opacity-0 cursor-pointer z-0"
       />
 
       {fileName && canClear && onClear && (
@@ -76,21 +83,34 @@ export default function FileUpload({ onParsed, fileName, onClear, canClear }: Pr
         </button>
       )}
 
-      <div className="flex flex-col items-center gap-2 pointer-events-none">
-        {fileName ? (
-          <>
-            <FileSpreadsheet className="w-7 h-7 text-accent-aqua" strokeWidth={1.5} />
-            <p className="font-mono text-sm text-foreground">{fileName}</p>
-            <p className="text-xs text-muted">{t("dropNewFileToReplace")}</p>
-          </>
-        ) : (
-          <>
-            <Upload className="w-7 h-7 text-muted" strokeWidth={1.5} />
-            <p className="text-sm text-foreground">{t("dropFileHere")}</p>
-            <p className="text-xs text-muted">{t("fileTypesHint")}</p>
-          </>
-        )}
-      </div>
+      {imagePreviewUrl ? (
+        <div className="relative flex flex-col items-center gap-2 pointer-events-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imagePreviewUrl}
+            alt={fileName ?? "Uploaded photo"}
+            className="max-h-40 rounded-lg object-contain shadow-md"
+          />
+          <p className="font-mono text-xs text-foreground mt-1">{fileName}</p>
+          <p className="text-xs text-muted">{t("dropNewFileToReplace")}</p>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-2 pointer-events-none">
+          {fileName ? (
+            <>
+              <FileSpreadsheet className="w-7 h-7 text-accent-aqua" strokeWidth={1.5} />
+              <p className="font-mono text-sm text-foreground">{fileName}</p>
+              <p className="text-xs text-muted">{t("dropNewFileToReplace")}</p>
+            </>
+          ) : (
+            <>
+              <Upload className="w-7 h-7 text-muted" strokeWidth={1.5} />
+              <p className="text-sm text-foreground">{t("dropFileHere")}</p>
+              <p className="text-xs text-muted">{t("fileTypesHint")}</p>
+            </>
+          )}
+        </div>
+      )}
       {error && (
         <p className="mt-3 text-xs font-mono text-accent-amber">{error}</p>
       )}
