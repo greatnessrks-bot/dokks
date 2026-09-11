@@ -5,6 +5,7 @@ import { Upload, FileSpreadsheet, X } from "lucide-react";
 import { parseFile, isSupportedFile } from "@/lib/parseDocument";
 import { useSettings } from "@/contexts/SettingsContext";
 import type { ParsedCsv } from "@/lib/types";
+import Spinner from "@/components/Spinner";
 
 interface Props {
   onParsed: (data: ParsedCsv) => void;
@@ -12,6 +13,8 @@ interface Props {
   imagePreviewUrl?: string | null;
   onClear?: () => void;
   canClear?: boolean;
+  uploading?: boolean;
+  uploadProgress?: number;
 }
 
 export default function FileUpload({
@@ -20,6 +23,8 @@ export default function FileUpload({
   imagePreviewUrl,
   onClear,
   canClear,
+  uploading,
+  uploadProgress = 0,
 }: Props) {
   const { t } = useSettings();
   const [isDragging, setIsDragging] = useState(false);
@@ -67,9 +72,10 @@ export default function FileUpload({
           e.target.value = "";
         }}
         className="absolute inset-0 opacity-0 cursor-pointer z-0"
+        disabled={uploading}
       />
 
-      {fileName && canClear && onClear && (
+      {fileName && canClear && onClear && !uploading && (
         <button
           type="button"
           onClick={(e) => {
@@ -83,7 +89,17 @@ export default function FileUpload({
         </button>
       )}
 
-      {imagePreviewUrl ? (
+      {uploading ? (
+        <div className="relative flex flex-col items-center gap-3 pointer-events-none py-2">
+          <Spinner className="w-7 h-7 text-accent-aqua" />
+          <div className="w-40 h-1.5 rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full bg-accent-indigo rounded-full transition-[width] duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      ) : imagePreviewUrl ? (
         <div className="relative flex flex-col items-center gap-2 pointer-events-none">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

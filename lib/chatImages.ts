@@ -14,6 +14,9 @@ export async function uploadChatImage(
 ): Promise<string | null> {
   const supabase = createClient();
 
+  const { data: sessionCheck } = await supabase.auth.getSession();
+  console.log("Session at upload time:", sessionCheck.session?.user?.id, "| userId param:", userId);
+
   const ext = mimeType.split("/")[1]?.split("+")[0] || "jpg";
   const path = `${userId}/${chatId}.${ext}`;
 

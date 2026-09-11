@@ -60,6 +60,9 @@ export default function Home() {
 
   const [animatedEntryIds, setAnimatedEntryIds] = useState<Set<string>>(new Set());
 
+  const [imageUploadActive, setImageUploadActive] = useState(false);
+  const [imageUploadProgress, setImageUploadProgress] = useState(0);
+
   const hasResumedPending = useRef(false);
   const hasLoadedChats = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -429,6 +432,8 @@ export default function Home() {
                 imagePreviewUrl={data?.imagePreviewUrl ?? null}
                 onClear={handleClearFile}
                 canClear={entries.length === 0}
+                uploading={imageUploadActive}
+                uploadProgress={imageUploadProgress}
               />
             </section>
 
@@ -478,7 +483,14 @@ export default function Home() {
             <form onSubmit={handleAsk} className="relative">
               <div className="flex gap-2 p-[1.5px] rounded-lg bg-gradient-to-r from-accent-indigo/60 via-accent-aqua/60 to-accent-indigo/60 focus-within:from-accent-indigo focus-within:via-accent-aqua focus-within:to-accent-indigo transition-colors">
                 <div className="flex flex-1 items-center gap-2 rounded-[7px] bg-surface p-1">
-                  <AttachMenu onParsed={handleFileParsed} disabled={submitting} />
+                  <AttachMenu
+                    onParsed={handleFileParsed}
+                    disabled={submitting}
+                    onUploadProgress={(active, pct) => {
+                      setImageUploadActive(active);
+                      setImageUploadProgress(pct);
+                    }}
+                  />
                   <input
                     type="text"
                     value={question}

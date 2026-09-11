@@ -124,33 +124,93 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-export async function parseImageFile(file: File): Promise<ParsedCsv> {
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("That image is too large. Please use one under 10MB.");
-  }
+const UPLOAD_PHASE_MAX_PCT = 70;
+const TRICKLE_MAX_PCT = 95;
+const TRICKLE_INTERVAL_MS = 300;
 
-  const imageBase64 = await fileToBase64(file);
-  const mimeType = file.type || "image/jpeg";
-  const imagePreviewUrl = `data:${mimeType};base64,${imageBase64}`;
+export function parseImageFile(
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<ParsedCsv> {
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_IMAGE_BYTES) {
+      reject(new Error("That image is too large. Please use one under 10MB."));
+      return;
+    }
 
-  const res = await fetch("/api/ocr", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageBase64, mimeType }),
+    fileToBase64(file)
+      .then((imageBase64) => {
+        const mimeType = file.type || "image/jpeg";
+        const imagePreviewUrl = `data:${mimeType};base64,${imageBase64}`;
+
+        const xhr = new XMLHttpRequest();
+        let trickleTimer: ReturnType<typeof setInterval> | null = null;
+
+        function clearTrickle() {
+          if (trickleTimer) {
+            clearInterval(trickleTimer);
+            trickleTimer = null;
+          }
+        }
+
+        xhr.open("POST", "/api/ocr");
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.min(
+              UPLOAD_PHASE_MAX_PCT,
+              Math.round((e.loaded / e.total) * UPLOAD_PHASE_MAX_PCT)
+            );
+            onProgress?.(pct);
+          }
+        };
+
+        xhr.upload.onload = () => {
+          let current = UPLOAD_PHASE_MAX_PCT;
+          onProgress?.(current);
+          clearTrickle();
+          trickleTimer = setInterval(() => {
+            current = Math.min(TRICKLE_MAX_PCT, current + 1);
+            onProgress?.(current);
+            if (current >= TRICKLE_MAX_PCT) clearTrickle();
+          }, TRICKLE_INTERVAL_MS);
+        };
+
+        xhr.onload = () => {
+          clearTrickle();
+          onProgress?.(100);
+
+          let json: { text?: string; error?: string };
+          try {
+            json = JSON.parse(xhr.responseText);
+          } catch {
+            reject(new Error("Couldn't read that image."));
+            return;
+          }
+
+          if (xhr.status < 200 || xhr.status >= 300) {
+            reject(new Error(json.error || "Couldn't read that image."));
+            return;
+          }
+
+          resolve({
+            fileName: file.name || "Photo",
+            kind: "text",
+            columns: [],
+            rows: [],
+            rawText: json.text ?? "",
+            imagePreviewUrl,
+          });
+        };
+
+        xhr.onerror = () => {
+          clearTrickle();
+          reject(new Error("Couldn't read that image."));
+        };
+
+        xhr.send(JSON.stringify({ imageBase64, mimeType }));
+      })
+      .catch(reject);
   });
-
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json.error || "Couldn't read that image.");
-  }
-
-  return {
-    fileName: file.name || "Photo",
-    kind: "text",
-    columns: [],
-    rows: [],
-    rawText: json.text,
-    imagePreviewUrl,
-  };
 }
